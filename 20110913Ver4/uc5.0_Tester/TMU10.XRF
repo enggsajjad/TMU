@@ -1,0 +1,66 @@
+WIN32 L51 CODE BANKING LINKER/LOCATOR V4.08.06,  INVOKED BY: 
+L51.EXE f:\uc5.0_tester\main.OBJ  to  F:\UC5.0_TESTER\TMU10.ABS PR(F:\UC5.0_TESTER\TMU10.M51) SN(1066142959415E46769E694) PW(80) RS(256) ix 
+
+INTER-MODULE CROSS-REFERENCE LISTING
+------------------------------------
+
+    NAME. . . . . . . . USAGE   MODULE NAMES
+    ----------------------------------------
+    ?C_CMPL . . . . . . CODE    [CMPL]:  MAIN 
+    ?C_CMPLS  . . . . . CODE    [CMPL]: 
+    ?C_LADD . . . . . . CODE    [LADD]:  MAIN 
+    ?C_LMUL . . . . . . CODE    [MULL]:  MAIN 
+    ?C_LOP  . . . . . . CODE    [COML]:  LSUB, LADD 
+    ?C_LSUB . . . . . . CODE    [LSUB]:  MAIN 
+    ?C_SLDIV_SP . . . . CODE    [LONG_SIGNED_DIV_SPEED_OPTIMIZED]:  MAIN 
+    ?C_START3 . . . . . CODE    [C3S]:  MAIN 
+    ?C_ULDIV  . . . . . CODE    [LONG_UNSIGNED_DIV]: 
+    ?C_ULDIV_SP . . . . CODE    [LONG_UNSIGNED_DIV_SPEED_OPTIMIZED]:  MAIN 
+    ?DIV_STORE_Q_SZ . . CODE    [LONG_UNSIGNED_DIV]:  LONG_UNSIGNED_DIV_SPEED_OPTIMIZED 
+    ?LOOP_DIV_SZ  . . . CODE    [LONG_UNSIGNED_DIV]:  LONG_UNSIGNED_DIV_SPEED_OPTIMIZED 
+    CHAN1 . . . . . . . IDATA   [MAIN]: 
+    CHAN2 . . . . . . . IDATA   [MAIN]: 
+    CHAN3 . . . . . . . IDATA   [MAIN]: 
+    CHAN4 . . . . . . . IDATA   [MAIN]: 
+    CNT . . . . . . . . DATA    [MAIN]: 
+    DELAY10MS . . . . . CODE    [MAIN]:  MAIN 
+    DELAY1MS  . . . . . CODE    [MAIN]:  MAIN 
+    DELAYMS . . . . . . CODE    [MAIN]:  MAIN 
+    DELAYUS . . . . . . CODE    [MAIN]:  MAIN 
+    DELAY_TIME  . . . . DATA    [MAIN]: 
+    DELAY_TIME_PRE  . . DATA    [MAIN]: 
+    DIVL?C_1  . . . . . CODE    [LONG_UNSIGNED_DIV]:  LONG_UNSIGNED_DIV_SPEED_OPTIMIZED 
+    DIVL?C_1_SP . . . . CODE    [LONG_UNSIGNED_DIV_SPEED_OPTIMIZED]:  LONG_SIGNED_DIV_SPEED_OPTIMIZED 
+    FINISH  . . . . . . BIT     [MAIN]: 
+    G . . . . . . . . . DATA    [MAIN]: 
+    GESI?C  . . . . . . CODE    [GESI]:  LONG_SIGNED_DIV_SPEED_OPTIMIZED, LONG_UNSIGNED_DIV 
+    I . . . . . . . . . DATA    [MAIN]: 
+    IDATALEN  . . . . .         [_C_IDATALEN]:  C3S 
+    IPGN1?C . . . . . . CODE    [IPGN1]:  MAIN 
+    ISINIT  . . . . . . BIT     [MAIN]: 
+    KEY1  . . . . . . . DATA    [MAIN]: 
+    KEY2  . . . . . . . DATA    [MAIN]: 
+    KEYINT  . . . . . . CODE    [MAIN]: 
+    KEYINT2 . . . . . . CODE    [MAIN]: 
+    LCDBUSY . . . . . . CODE    [MAIN]: 
+    LCDCLEAR  . . . . . CODE    [MAIN]:  MAIN 
+    LCDINIT . . . . . . CODE    [MAIN]:  MAIN 
+    MAIN  . . . . . . . CODE    [MAIN]:  C3S 
+    PCATIMERS . . . . . CODE    [MAIN]: 
+    RST_STK4?C  . . . . CODE    [RST_STK]:  CMPL, LSUB, LADD, LONG_UNSIGNED_DIV, MULL 
+    RST_STK6?C  . . . . CODE    [RST_STK]: 
+    RST_STK7?C  . . . . CODE    [RST_STK]: 
+    RST_STK?C . . . . . CODE    [RST_STK]: 
+    S . . . . . . . . . DATA    [MAIN]: 
+    STOP  . . . . . . . IDATA   [MAIN]: 
+    XPGN1?C . . . . . . CODE    [XPGN1]:  MAIN 
+    _CONVERT  . . . . . CODE    [MAIN]:  MAIN 
+    _CONVERT?BYTE . . . DATA    [MAIN]:  MAIN 
+    _INITP2?  . . . . .         [_C_IDATALEN]:  C3S 
+    _LCDGOTOXY  . . . . CODE    [MAIN]:  MAIN 
+    _LCDWRITECHAR . . . CODE    [MAIN]: 
+    _LCDWRITECMD  . . . CODE    [MAIN]:  MAIN 
+    _LCDWRITESTR  . . . CODE    [MAIN]:  MAIN 
+    _SENDCHAR . . . . . CODE    [MAIN]: 
+    _SENDSTR  . . . . . CODE    [MAIN]:  MAIN 
+    _STACK  . . . . . . IDATA   [MAIN]:  C3S 

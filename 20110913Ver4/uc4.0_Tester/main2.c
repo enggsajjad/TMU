@@ -1,0 +1,499 @@
+/*Version:	TMU1.1b
+  
+  The Project is AT89C51RC2 Based project, it measures the width of the pulse (mas = 100msec)
+  using Programmable Counter Arrays (PCA).The LCD 8 bit Interface with Busy Flag Technique is
+  incorporated for display. The results can either be display on LCD, or being logged  to  PC
+  serially at the buadrate of 19200. A button is used to make the system Ready.
+ 
+  Programmer:	Sajjad Hussain, JE, SDPD, ICCC, 12-11-2008.
+
+  Simulted: 	Proteus 7.0
+  
+  Crystal	22118400
+  Serial BaudRate 	19200 clocked at 22118400
+  Timers					clocked at 22118400
+  PCA Timers			clocked at 614400	(Timer0  22118400/12/3)
+  Measureable Time	106.7ms
+
+  
+  Modified:	12-12-2010
+  
+    PCA Timers			clocked at 460800	(Timer0  22118400/12/4)
+    Measureable Time	  142.2ms
+    
+  Start Pulse                              ____________________
+  																					|
+  																					|
+  																					|_____________________________________
+  Stop Pulse 1                         		     							 ____________________
+  																							|
+  																							|
+							   		_______________________________________|
+  Stop Pulse 1  	 	                      		     							 ____________________
+	  																							|
+  																								|
+							   			_______________________________________|
+
+*/
+#include "at89c51rc2.h"
+#define Putc LcdWriteChar
+
+//Pins Assignments
+sbit BKLT = P2^4;//3; 
+sbit RS  = P2^2;//4; 
+sbit RW  = P2^5;
+sbit EN  = P2^3;//6;
+sbit LED = P2^7;
+sbit BS  = P0^7;
+
+unsigned char Key1,Key2,RecChar,i,g;
+bit isInit=0,ack,finish;
+//idata unsigned int PosEdge[4],NegEdge[4];
+idata unsigned int Stop[4];
+char cnt=0;
+
+//Function Prototypes
+void LcdInit();
+void DelayUs(void);
+void DelayMs(void);
+void LcdClear(void);
+void SendStr(char *s);
+void LcdWriteStr(char *var);
+void SendChar(unsigned char c);
+void LcdWriteCmd(unsigned char c);
+void LcdWriteChar(unsigned char var);
+void LongToAscii(unsigned long Value,bit comm);
+void LcdGotoXY(unsigned char r,unsigned char c);
+void Convert(unsigned int NegEdge, bit comm);
+
+// Main Program Starts Here
+void main()
+{
+	// Set External Interrupt Settings
+	EX0 = 1;
+	IT0 = 1;
+	
+	// Set Timer0 used as Clock for PCA
+	TMOD = 0x12;
+	TL0  = 0xFC;// Divide by 4
+	TH0  = 0xFC;// 
+	TR0  = 1;
+        
+	// Set Serial  Port Settings
+   SCON 	= 0x50;
+   BDRCON&=0xEC;
+   BDRCON|=0x0C;
+   BRL	=0xFD;
+   BDRCON|=0x10;
+	ES  = 1;
+	
+	// Set PCA Module and PCA Interrupt
+	CCON = 0x00;// stop timre, clear flags
+	CMOD = 0x04;// PCA Count Pulse Select
+	CH = 0;CL = 0; // Clear PCA Timer Registers
+	CCAPM0 = 0;	//Negative Edge Start Pulse
+	CCAPM1 = 0;	//Positive Edge Stop Pulse 1
+	CCAPM2 = 0;	//Positive Edge Stop Pulse 2
+	CCAPM3 = 0; //Positive Edge Stop Pulse 3
+	CCAPM4 = 0; //Positive Edge Stop Pulse 4
+
+	LED = 0;
+	// Enable Interrupts
+	IEN0 = IEN0 | 0xC1;
+   
+   // Initial Screen
+	LcdInit();
+	LcdGotoXY(1,2);
+	LcdWriteStr("Time Measuring");
+	LcdGotoXY(2,2);
+	LcdWriteStr("    Unit");	
+	LcdGotoXY(3,2);
+	LcdWriteStr("Range: 1-100ms");
+	isInit = 1;
+	
+	//Running Forever
+	while(1)
+	{
+		// Acknowledge to Serial Port PC
+		if(ack)
+		{
+			ack = 0;
+			if(RecChar=='R')
+			{
+				SendChar('R');
+				LcdClear();
+				LcdGotoXY(2,6);
+				LcdWriteStr("Ready");
+				LED = 1;
+				Stop[0] = 0;
+				Stop[1] = 0;
+				Stop[2] = 0;
+				Stop[3] = 0;
+				CL =0;CH =0;
+				CCON = 0x00;// stop timre, clear flags
+				CMOD = 0x04;// PCA Count Pulse Select
+				CCAPM0 = 0x21;	//Positive Edge Start Pulse
+			}
+		else if (RecChar=='L')
+			SendChar('L');
+		}//ack
+		// For Local LCD Display
+		if(finish)
+		{
+			finish = 0;
+			LED = 0;
+			LcdClear();
+			SendChar('@');
+		 	for(i=0;i<4;i++)
+		 	{
+	 			LcdGotoXY(i+1,1);
+	 			LcdWriteChar(i+49);
+		 		LcdWriteChar(' ');
+ 		 		if(Stop[i]<0xEA00)
+ 		 		{
+ 		 			Convert(Stop[i],0);
+ 		 			LcdWriteStr(" ms");
+ 		 		}
+ 		 		else
+ 		 			LcdWriteStr("Overflow");
+		 	}//for
+		 	// Send to Serial Port
+			SendStr("Time Measuring Unit");
+			SendChar(13);
+			SendStr("   Time in msec");
+			SendChar(13);
+			SendChar(13);
+			for(i=0;i<4;i++)
+		 	{
+	 			SendStr("Ch#");
+	 			SendChar(i+49);
+		 		SendChar(' ');
+	 			SendChar(' ');
+ 		 		Convert(Stop[i],1);
+		 		SendChar(13);
+		 	}//for
+		}//finish
+	}//while
+}//main
+
+// Interrupt Routines
+void PCATimers() interrupt 6  using 1
+{
+	if(CF)
+	{
+		CCON = 0x00; // Stop Timer, Clear CF Flag
+	 	CMOD = 0x04;
+	 	finish = 1;
+	}//Cf
+	//Start Pulse
+	if(CCF0)
+	{
+		CCF0 = 0;
+		CCAPM0 = 0x00;				// Disable ECCFn bit
+		CCAPM1 = 0x11;				//Negative Edge	Stop Pulse 1
+		CCAPM2 = 0x11;				//Negative Edge	Stop Pulse 2
+		CCAPM3 = 0x11; 			//Negative Edge	Stop Pulse 3
+		CCAPM4 = 0x11; 			//Negative Edge	Stop Pulse 4
+		CL =0; CH =0;				// Reset the Timer Registers
+		CMOD = 0x05;				// Enable Overflow Interrupt
+		CR = 1;						// Run PCA Timer
+	}
+	//Stop Pulse 1
+	if(CCF1)
+	{
+		CCF1 = 0;
+ 		Stop[0] = CCAP1L | (CCAP1H<<8);
+ 		CCAPM1 = 0x00;
+	}
+	//Stop Pulse 2
+	if(CCF2)
+	{
+		CCF2 = 0;
+		Stop[1] = CCAP2L | (CCAP2H<<8);
+		CCAPM2 = 0x00;
+	}
+	//Stop Pulse 3
+	if(CCF3)
+	{
+		CCF3 = 0;
+ 		Stop[2] = CCAP3L | (CCAP3H<<8);
+		CCAPM3 = 0x00;
+	}
+	//Stop Pulse 4
+	if(CCF4)
+	{
+		CCF4 = 0;
+		Stop[3] = CCAP4L | (CCAP4H<<8);
+ 		CCAPM4 = 0x00;
+	}	
+}
+
+void KeyInt() interrupt 0 
+{  
+	if(isInit)
+	{
+		DelayMs();
+		LcdClear();
+		LcdGotoXY(2,6);
+		LcdWriteStr("Ready");
+		LED = 1;
+		Stop[0] = 0;
+		Stop[1] = 0;
+		Stop[2] = 0;
+		Stop[3] = 0;
+		CL =0;CH =0;
+		CCON = 0x00;// stop timre, clear flags
+		CMOD = 0x04;// PCA Count Pulse Select
+		CCAPM0 = 0x21;	//Positive Edge Start Pulse
+	}//if Init
+}
+
+void Serial() interrupt 4
+{
+	if (RI)
+	{
+		RI = 0;
+    	RecChar = SBUF;
+		ack = 1;  	
+	}
+}
+
+// Function Definitions
+
+void LongToAscii(unsigned long Value,bit comm)
+{
+ //Handles Upto 10 Digits
+ bit isDivisible=0;
+ unsigned long Divisor = 1000000000;
+ unsigned char k;
+ unsigned char Q;
+ if(Value==0)	
+ {
+ 	if(comm)
+ 		SendChar('0');
+ 	else
+	 	Putc('0');
+ 	return;
+ }
+ for(k=0;k<10;k++)
+ {
+ 	if (Divisor<=Value) isDivisible=1;
+	if(isDivisible)
+ 	{
+  	   Q = (unsigned char )(Value/Divisor);
+  		if(comm)
+  			SendChar(Q+48);
+  		else
+	  		LcdWriteChar(Q+48); 
+ 		Value = Value - (Q)*Divisor;
+	}//End if (isDivisible)
+	Divisor = Divisor/10;
+ }//End for
+}
+
+void Convert(unsigned int NegEdge, bit comm)
+{
+unsigned char temp;
+unsigned int pw;
+unsigned long time;
+char wPart;
+unsigned int fPart;
+unsigned int decimal;
+decimal = 1000;
+
+			pw = NegEdge;
+			time = (unsigned long) pw;
+			
+			time = time *10;
+			//wPart = (char)(time/6144);
+			wPart = (char)(time/4608);
+			time = time*decimal;
+			//time = time/6144;
+			time = time/4608;
+			fPart = (int)(time - wPart*decimal);
+
+			LongToAscii(wPart,comm);
+			if(comm)
+				SendChar('.');
+			else
+				Putc('.');
+			decimal=decimal/10;
+			while(fPart<decimal)
+			{
+			if(comm)
+				SendChar('0');
+			else
+			 	Putc('0');
+			 	decimal=decimal/10;
+			}
+			LongToAscii(fPart,comm);
+			
+        if(comm=0)
+        {
+			Putc(' ');
+			temp = pw/10000; 
+			pw = pw-temp*10000;
+			Putc((temp)+48);
+		
+			temp = pw/1000; 
+			pw = pw-temp*1000;
+			Putc((temp)+48);
+			
+			temp = pw/100; 
+			pw = pw-temp*100;
+			Putc((temp)+48);
+			
+			temp = pw/10; 
+			pw = pw-temp*10;
+			Putc((temp)+48);
+			
+			Putc((pw)+48);
+			}
+}
+
+void DelayUs(void)
+{
+	TL1 = 0x90;TH1 = 0xFE;//200 usec at 22.1184MHz
+	//TL1 = 0x48;TH1 = 0xFF;//100 usec at 22.1184MHz
+	//TL1 = 0xA4;TH1 = 0xFF;//50 usec at 22.1184MHz
+	//TL1 = 0xD2;TH1 = 0xFF;//25 usec at 22.1184MHz
+	//TL1 = 0xF7;TH1 = 0xFF;//5 usec at 22.1184MHz
+	//TL1 = 0xEE;TH1 = 0xFF;//10 usec at 22.1184MHz
+	TR1  = 1;
+	while(!TF1);
+	TR1  = 0;
+	TF1  = 0;
+}
+
+void DelayMs(void)
+{
+	TL1 = 0x00;TH1 = 0x04;//35ms at 22.1184MHz
+	TR1  = 1;
+	while(!TF1);
+	TR1  = 0;
+	TF1  = 0;
+}
+// 8bit LCD Interface
+void LcdInit()
+{
+   LcdWriteCmd(0x38);	//Function Set 0x38
+   LcdWriteCmd(0x38);	//Function Set
+   LcdWriteCmd(0x38);	//Function Set
+	LcdWriteCmd(0x06);	//Entry Mode Set 0x06
+   LcdWriteCmd(0x0C);	//Display On  Off Control 0x0C
+}
+
+void LcdBusy()
+{
+	BS   = 1;			//Make D7th bit of LCD as i/p
+   EN   = 1;         //Make port pin as o/p
+   RS   = 0;         //Selected command register
+   RW   = 1;         //We are reading
+   while(BS)
+   {   					//read busy flag again and again till it becomes 0 Enable H->L
+   	EN   = 0;
+      EN   = 1;
+   }
+}
+void LcdWriteCmd(unsigned char var)
+{
+	P0 = var;      	//Commands to be Written
+   RS   = 0;        	//Selected command register
+   RW   = 0;        	//We are writing in instruction register
+   EN   = 1;        	//Enable H->L
+   EN   = 0;
+   LcdBusy();      //Wait for LCD to process the command
+}
+void LcdWriteChar(unsigned char var)
+{
+	P0 = var;      	//Data/Character to be Written
+   RS   = 1;         //Selected data register
+   RW   = 0;         //We are writing
+   EN   = 1;         //Enable H->L
+   EN   = 0;
+   LcdBusy();      //Wait for LCD to process the command
+}
+void LcdWriteStr(char *var)
+{
+	while(*var)       //till string ends send characters one by one
+   	LcdWriteChar(*var++);
+}
+
+void LcdGotoXY(unsigned char row, unsigned char col)
+{
+	switch (row)
+	{
+		case 1: LcdWriteCmd(0x80 + col - 1); break;
+		case 2: LcdWriteCmd(0xc0 + col - 1); break;
+		case 3: LcdWriteCmd(0x94 + col - 1); break;
+		case 4: LcdWriteCmd(0xd4 + col - 1); break;
+		/*
+		case 1: LcdWriteCmd(0x80 + col - 1); break;
+		case 2: LcdWriteCmd(0xc0 + col - 1); break;
+		case 3: LcdWriteCmd(0x90 + col - 1); break;
+		case 4: LcdWriteCmd(0xd0 + col - 1); break;*/
+		default: break;
+	}
+}
+void LcdClear()
+{
+ unsigned char h;
+ LcdWriteCmd(0x01);
+ for(h=0;h<100;h++)
+		DelayUs();
+}
+void SendChar(unsigned char c)
+{
+
+	TI=1;
+	while (!TI);	TI=0;	SBUF = c;
+	while (!TI);	TI=0;
+}
+void SendStr(char *s)
+{
+	while (*s)
+	{
+		SendChar(*s);
+		s++;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMU", "TMU.csproj", "{265687D1-FAC9-4227-9C51-19DFE3EE09BC}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "TMU_TerminalSetup", "..\TMUTerminal_Setup\TMUSetup\TMUSetup.vdproj", "{632FB1A8-7BBB-488D-8FAB-1026AE69E3D3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{265687D1-FAC9-4227-9C51-19DFE3EE09BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{265687D1-FAC9-4227-9C51-19DFE3EE09BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{265687D1-FAC9-4227-9C51-19DFE3EE09BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{265687D1-FAC9-4227-9C51-19DFE3EE09BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{632FB1A8-7BBB-488D-8FAB-1026AE69E3D3}.Debug|Any CPU.ActiveCfg = Debug
+		{632FB1A8-7BBB-488D-8FAB-1026AE69E3D3}.Debug|Any CPU.Build.0 = Debug
+		{632FB1A8-7BBB-488D-8FAB-1026AE69E3D3}.Release|Any CPU.ActiveCfg = Release
+		{632FB1A8-7BBB-488D-8FAB-1026AE69E3D3}.Release|Any CPU.Build.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
